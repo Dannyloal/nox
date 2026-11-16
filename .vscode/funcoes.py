@@ -1,77 +1,87 @@
 import math
 
+
 def potencia(base, expoente):
-    return base ** expoente
+    """Calcula base elevada ao expoente."""
+    if not isinstance(base, (int, float)) or isinstance(base, bool):
+        raise ValueError("POTENCIA exige uma base numerica.")
+    if not isinstance(expoente, (int, float)) or isinstance(expoente, bool):
+        raise ValueError("POTENCIA exige um expoente numerico.")
+    try:
+        resultado = base ** expoente
+    except (OverflowError, ZeroDivisionError, ValueError) as erro:
+        raise ValueError(f"Nao foi possivel calcular POTENCIA: {erro}.") from erro
+    if isinstance(resultado, complex):
+        raise ValueError("POTENCIA nao aceita resultado complexo nesta linguagem.")
+    return resultado
+
 
 def raiz(numero):
+    """Calcula a raiz quadrada real de um numero nao negativo."""
+    if not isinstance(numero, (int, float)) or isinstance(numero, bool):
+        raise ValueError("RAIZ exige um numero real.")
     if numero < 0:
-        raise ValueError("Raíz aceita somente números não negativos")
-    
+        raise ValueError("RAIZ nao aceita numeros negativos.")
     return math.sqrt(numero)
 
-#  ************************
 
-def formatar(n):
-    if float(n).is_integer():
-        return str(int(n))
-    return str(round(n, 4))
+def _fmt(numero):
+    if math.isclose(numero, round(numero), abs_tol=1e-12):
+        return str(int(round(numero)))
+    return f"{numero:.10g}"
 
-# BHASKARA/DELTA
 
 def montar_etapas(a, b, c):
+    """Prepara uma explicacao curta e as raizes reais da equacao."""
+    for nome, valor in (("a", a), ("b", b), ("c", c)):
+        if not isinstance(valor, (int, float)) or isinstance(valor, bool):
+            raise ValueError(f"O coeficiente '{nome}' deve ser numerico.")
     if a == 0:
-        raise ValueError("Não é uma equação de 2º grau se 'a' for igual a 0")
-    
-    delta = b ** 2 - 4 * a * c
+        raise ValueError(
+            "Nao e uma equacao do segundo grau: o coeficiente 'a' nao pode ser zero."
+        )
+
+    b2 = b ** 2
+    quatro_ac = 4 * a * c
+    delta = b2 - quatro_ac
     etapas = [
-        f"Equação: a = {a}, b = {b}, c = {c}",
-        "Fórmula do Delta: Δ = b² - 4.a.c",
-        f"Valores no lugar: Δ = ({b}²) - 4.{a}.{c}",
-        f"A conta: Δ = {b ** 2} - {4 * a * c} = {delta}",
+        f"Equacao: {a}x² + ({b})x + ({c}) = 0",
+        "Discriminante: Δ = b² - 4ac",
+        f"Substituindo: Δ = ({b})² - 4 × ({a}) × ({c})",
+        f"Calculando: Δ = {_fmt(b2)} - {_fmt(quatro_ac)} = {_fmt(delta)}",
     ]
-    
+
     if delta < 0:
-        etapas.append("Se delta (Δ) é menor que 0, não existem raízes reais")
-        return etapas, [] # para aqui e não haverá mais etapas
-    
-    raiz = math.sqrt(delta)
-    x1 = (-b + raiz) / (2 * a)
-    x2 = (-b - raiz) / (2 * a)
-    etapas += [
-        "Se Δ é maior ou igual a 0, existem raízes reais",
-        f"Raíz do Delta: √{delta} = {formatar(raiz)}",
-        "Fórmula das raízes: x = (-b ± √Δ) / 2a",
-        f"Valores no lugar: x = ({-b} ± √{delta}) / {2 * a}",
-    ]
-    
+        etapas.append("Como Δ é menor que zero, nao existem raizes reais.")
+        return etapas, []
+
+    raiz_delta = math.sqrt(delta)
+    denominador = 2 * a
+    x1 = (-b + raiz_delta) / denominador
+    x2 = (-b - raiz_delta) / denominador
+    etapas.extend([
+        "Formula resolutiva: x = (-b ± √Δ) / (2a)",
+        f"Raiz quadrada do discriminante: √Δ = √{_fmt(delta)} = {_fmt(raiz_delta)}",
+        f"Primeira raiz: x₁ = ({_fmt(-b)} + {_fmt(raiz_delta)}) / {_fmt(denominador)} = {_fmt(x1)}",
+        f"Segunda raiz: x₂ = ({_fmt(-b)} - {_fmt(raiz_delta)}) / {_fmt(denominador)} = {_fmt(x2)}",
+    ])
     if delta == 0:
-        etapas.append(f"Como Δ = 0, as duas raízes são iguais: x = {formatar(x1)}")
+        etapas.append(f"Resultado: raiz dupla x₁ = x₂ = {_fmt(x1)}.")
     else:
-        etapas.append(f"Resultado: x1 = {formatar(x1)} e x2 = {formatar(x2)}")
-       
+        etapas.append(f"Resultado: x₁ = {_fmt(x1)} e x₂ = {_fmt(x2)}.")
     return etapas, [x1, x2]
 
 
 def bhaskara(a, b, c):
     etapas, raizes = montar_etapas(a, b, c)
+    print("\nResolucao da equacao:")
     for etapa in etapas:
-        print(etapa)        
+        print(etapa)
     return raizes
-
-#  ************************
-
-
 
 
 FUNCOES = {
     "POTENCIA": (2, potencia),
     "RAIZ": (1, raiz),
-    "BHASKARA": (3, bhaskara)
+    "BHASKARA": (3, bhaskara),
 }
-
-if __name__ == "__main__":
-    for a, b, c in [(1, -3, 2), (1, -2, 1), (1, 2, 5)]:
-        etapas, raizes = montar_etapas(a, b, c)
-        print(f"\n--- a={a}, b={b}, c={c} ---")
-        for etapa in etapas:
-            print(etapa)
