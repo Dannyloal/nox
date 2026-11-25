@@ -91,3 +91,25 @@ Raiz quadrada do discriminante: √Δ = √1 = 1
 Primeira raiz: x₁ = (3 + 1) / 2 = 2
 Segunda raiz: x₂ = (3 - 1) / 2 = 1
 Resultado: x₁ = 2 e x₂ = 1.
+
+
+FATORIAL(numero)
+
+Calcula o fatorial de um numero inteiro nao negativo e mostra o
+desenvolvimento da multiplicacao.
+
+Exemplo:
+
+FATORIAL(5)
+
+Desenvolvimento:
+
+5! = 5 × 4 × 3 × 2 × 1 = 120
+
+Resultado:
+
+120
+
+O fatorial de zero e definido como 1:
+
+FATORIAL(0) -> 1

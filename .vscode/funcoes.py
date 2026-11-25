@@ -20,6 +20,44 @@ def raiz(numero):
         raise ValueError('RAIZ nao aceita numeros negativos.')
     return math.sqrt(numero)
 
+def fatorial(numero):
+    if not isinstance(numero, (int, float)) or isinstance(numero, bool):
+        raise ValueError(
+            "FATORIAL exige um numero inteiro nao negativo."
+        )
+
+    if numero < 0:
+        raise ValueError(
+            "FATORIAL exige um numero inteiro nao negativo."
+        )
+
+    if isinstance(numero, float):
+        if not math.isfinite(numero) or not numero.is_integer():
+            raise ValueError(
+                "FATORIAL exige um numero inteiro nao negativo."
+            )
+
+    numero = int(numero)
+    resultado = 1
+
+    if numero < 2:
+        desenvolvimento = f"{numero}! = 1"
+    else:
+        fatores = " × ".join(
+            str(valor)
+            for valor in range(numero, 0, -1)
+        )
+
+        for valor in range(2, numero + 1):
+            resultado *= valor
+
+        desenvolvimento = (
+            f"{numero}! = {fatores} = {resultado}"
+        )
+
+    print(f"Desenvolvimento do fatorial: {desenvolvimento}")
+    return resultado
+
 def _fmt(numero):
     if math.isclose(numero, round(numero), abs_tol=1e-12):
         return str(int(round(numero)))
@@ -55,4 +93,9 @@ def bhaskara(a, b, c):
     for etapa in etapas:
         print(etapa)
     return raizes
-FUNCOES = {'POTENCIA': (2, potencia), 'RAIZ': (1, raiz), 'BHASKARA': (3, bhaskara)}
+FUNCOES = {
+    "POTENCIA": (2, potencia),
+    "RAIZ": (1, raiz),
+    "BHASKARA": (3, bhaskara),
+    "FATORIAL": (1, fatorial),
+}

@@ -4,7 +4,12 @@ class ErroSemantico(Exception):
     pass
 
 class Semantica:
-    QUANTIDADE_ARGUMENTOS = {'POTENCIA': 2, 'RAIZ': 1, 'BHASKARA': 3}
+    QUANTIDADE_ARGUMENTOS = {
+    "POTENCIA": 2,
+    "RAIZ": 1,
+    "BHASKARA": 3,
+    "FATORIAL": 1,
+}
 
     def __init__(self):
         self.variaveis = {}
@@ -39,7 +44,10 @@ class Semantica:
         if isinstance(node, FunctionCall):
             nome = node.name.upper()
             if nome not in self.QUANTIDADE_ARGUMENTOS:
-                raise ErroSemantico(f"Erro semantico: funcao '{node.name}' nao existe. Funcoes disponiveis: POTENCIA, RAIZ e BHASKARA.")
+                raise ErroSemantico(
+    f"Erro semantico: funcao '{node.name}' nao existe. "
+    "Funcoes disponiveis: POTENCIA, RAIZ, BHASKARA e FATORIAL."
+)
             esperada = self.QUANTIDADE_ARGUMENTOS[nome]
             recebida = len(node.args)
             if recebida != esperada:
