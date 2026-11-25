@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# O construtor roda o main.py dentro do runtime.py (o motor);
+# O python procura os outros arquivos (lexer.py, parser.py...) dentro do motor mas nao os encontra, porque eles estão dentro de .vscode;
+# Então a linha abaixo acrescenta a pasta .vscode a lista de lugares onde python deve procurar os arquivos
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from lexer import Lexer
 from parser import Parser
 from interpreter import Interpreter
@@ -85,5 +93,34 @@ def repl():
             processar(codigo, semantico, interpretador)
         except Exception as erro:
             print(f'{erro}\n')
+
+def executar_arquivo(caminho):
+    arquivo = Path(caminho)
+    if arquivo.suffix.lower() != '.nox':
+        print('Erro: o arquivo deve ter extensao .nox')
+        return 1
+    if not arquivo.exists():
+        print(f"Erro: arquivo '{arquivo}' nao encontrado")
+        return 1
+    semantico = Semantica()
+    interpretador = Interpreter()
+    with open(arquivo, encoding='utf-8') as f:
+        linhas = f.readlines()
+    for numero, linha in enumerate(linhas, start=1):
+        linha = linha.strip()
+        if not linha or linha.startswith('#'):
+            continue
+        print(f'>>> {linha}')
+        try:
+            processar(linha, semantico, interpretador)
+        except Exception as erro:
+            print(f'Erro na linha {numero}: {erro}')
+            return 1
+    return 0
+
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        sys.exit(executar_arquivo(sys.argv[1]))
     repl()
+    
+# *******************************

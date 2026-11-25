@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOX - Bhaskara passo a passo</title>
+<style>
+  :root {
+    --bg: #f5f6fa; --card: #ffffff; --texto: #1d2230; --suave: #6b7388;
+    --borda: #dde1ec; --destaque: #4f46e5; --destaque-texto: #ffffff;
+    --ok: #0f9d58; --erro: #d93025; --atual: #eef0ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141c; --card: #1b1e2a; --texto: #e8eaf3; --suave: #9aa1b8;
+      --borda: #2c3042; --destaque: #7c83ff; --destaque-texto: #12141c;
+      --ok: #3ddc84; --erro: #ff6b60; --atual: #252a45;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; padding: 24px 16px;
+  }
+  main { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .sub { color: var(--suave); margin: 0 0 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 14px; padding: 18px; margin-bottom: 16px;
+  }
+  .aviso {
+    background: var(--atual); border: 1px dashed var(--destaque);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+    font-size: .9rem; display: none;
+  }
+  .campos { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; font-size: .85rem; color: var(--suave); gap: 4px; }
+  input {
+    width: 90px; padding: 10px; font-size: 1.1rem; text-align: center;
+    border: 1px solid var(--borda); border-radius: 8px;
+    background: var(--bg); color: var(--texto);
+  }
+  button {
+    font: inherit; cursor: pointer; border-radius: 10px;
+    border: 1px solid var(--borda); background: var(--card); color: var(--texto);
+    padding: 10px 16px;
+  }
+  button.principal {
+    background: var(--destaque); color: var(--destaque-texto);
+    border-color: var(--destaque); font-weight: 600;
+  }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--destaque); outline-offset: 2px; }
+  .eq { margin-top: 10px; color: var(--suave); font-size: .9rem; }
+  #passos { list-style: none; margin: 0; padding: 0; }
+  #passos li {
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid var(--borda); font-family: ui-monospace, Consolas, monospace;
+    font-size: .95rem; word-break: break-word;
+  }
+  #passos li.atual { background: var(--atual); border-color: var(--destaque); }
+  #passos li.antigo { color: var(--suave); }
+  .controles { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; }
+  .controles button { font-size: 1.05rem; min-width: 120px; }
+  #contador { color: var(--suave); font-size: .9rem; text-align: center; }
+  #resultado {
+    display: none; margin-top: 12px; padding: 14px; border-radius: 10px;
+    border: 2px solid var(--ok); font-size: 1.15rem; font-weight: 600;
+  }
+  #erro {
+    display: none; color: var(--erro); border: 1px solid var(--erro);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; white-space: pre-wrap;
+  }
+  .dica { color: var(--suave); font-size: .85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NOX · Equação do 2º grau</h1>
+  <p class="sub">Digite os valores de a, b e c e acompanhe a resolução passo a passo.</p>
+
+  <div id="aviso" class="aviso">
+    Modo de teste: a NOX não está conectada, então esta tela mostra uma resposta de exemplo (a=1, b=-3, c=2).
+  </div>
+
+  <section class="card">
+    <form id="form" class="campos">
+      <label>a <input id="a" inputmode="decimal" value="1" autocomplete="off"></label>
+      <label>b <input id="b" inputmode="decimal" value="-3" autocomplete="off"></label>
+      <label>c <input id="c" inputmode="decimal" value="2" autocomplete="off"></label>
+      <button type="submit" class="principal">Resolver</button>
+    </form>
+    <div class="eq" id="eq">ax² + bx + c = 0</div>
+  </section>
+
+  <div id="erro" role="alert"></div>
+
+  <section class="card" id="areaPassos" hidden>
+    <ul id="passos" aria-live="polite"></ul>
+    <div class="controles">
+      <button id="voltar" type="button" aria-label="Voltar uma etapa">◀ Voltar</button>
+      <span id="contador"></span>
+      <button id="avancar" type="button" class="principal" aria-label="Avançar uma etapa">Avançar ▶</button>
+    </div>
+    <div id="resultado"></div>
+    <p class="dica">Dica: use as setas ← e → do teclado.</p>
+  </section>
+</main>
+
+<!-- O runtime do construtor entrega esta ponte ao carregar a página -->
+<script src="/bridge.js"></script>
+<script>
+  // Resposta de exemplo, usada SOMENTE quando a NOX não está conectada (teste da tela)
+  const AMOSTRA = [
+    "Etapa 1 - Tokens:", "IDENTIFICADOR(bhaskara) | ...", "",
+    "Etapa 2 - AST:", "FunctionCall(...)", "",
+    "Etapa 3 - Analise semantica:", "Tipos, variaveis e quantidade de argumentos validados.", "",
+    "Etapa 4 - Codigo intermediario TAC:", "t1 = -3", "t2 = bhaskara(1, t1, 2)", "",
+    "Etapa 5 - Execucao e desenvolvimento matematico:",
+    "Equação: a = 1, b = -3, c = 2",
+    "Fórmula do Delta: Δ = b² - 4.a.c",
+    "Valores no lugar: Δ = (-3)² - 4.1.2",
+    "A conta: Δ = 9 - 8 = 1",
+    "Se Δ é maior ou igual a 0, existem raízes reais",
+    "Raíz do Delta: √1 = 1",
+    "Fórmula das raízes: x = (-b ± √Δ) / 2a",
+    "Valores no lugar: x = (3 ± √1) / 2",
+    "Resultado: x1 = 2 e x2 = 1", "",
+    "Resultado final:", "x1 = 2; x2 = 1", ""
+  ].join("\n");
+
+  const temPonte = typeof window.LinguagemAluno !== "undefined";
+  if (!temPonte) document.getElementById("aviso").style.display = "block";
+
+  async function executarNox(codigo) {
+    if (temPonte) return await window.LinguagemAluno.executar(codigo);
+    return { ok: true, resultado: AMOSTRA };
+  }
+
+  // Separa as etapas da Bhaskara do resto da saída da NOX
+  function extrairEtapas(texto) {
+    const linhas = String(texto).split(/\r?\n/);
+    const ini = linhas.findIndex(l => l.startsWith("Etapa 5"));
+    const fim = linhas.findIndex(l => l.startsWith("Resultado final"));
+    const limpar = arr => arr.map(s => s.trim()).filter(Boolean);
+    if (ini >= 0 && fim > ini) {
+      return {
+        passos: limpar(linhas.slice(ini + 1, fim)),
+        final: limpar(linhas.slice(fim + 1)).join(" ")
+      };
+    }
+    return { passos: limpar(linhas), final: "" };
+  }
+
+  const el = id => document.getElementById(id);
+  let passos = [], final = "", atual = 0;
+
+  function mostrarErro(msg) {
+    el("erro").textContent = msg || "";
+    el("erro").style.display = msg ? "block" : "none";
+  }
+
+  function desenhar() {
+    const lista = el("passos");
+    lista.innerHTML = "";
+    for (let i = 0; i <= atual; i++) {
+      const li = document.createElement("li");
+      li.textContent = passos[i];
+      li.className = i === atual ? "atual" : "antigo";
+      lista.appendChild(li);
+    }
+    el("contador").textContent = "Etapa " + (atual + 1) + " de " + passos.length;
+    el("voltar").disabled = atual === 0;
+    el("avancar").disabled = atual >= passos.length - 1;
+    const fim = atual >= passos.length - 1 && final;
+    el("resultado").style.display = fim ? "block" : "none";
+    el("resultado").textContent = fim ? "Resultado final: " + final : "";
+  }
+
+  function avancar() { if (atual < passos.length - 1) { atual++; desenhar(); } }
+  function voltar()  { if (atual > 0) { atual--; desenhar(); } }
+
+  function lerNumero(id, nome) {
+    const n = Number(el(id).value.trim().replace(",", "."));
+    if (el(id).value.trim() === "" || !Number.isFinite(n)) {
+      throw new Error("O valor de " + nome + " precisa ser um número.");
+    }
+    return n;
+  }
+
+  el("form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    mostrarErro("");
+    try {
+      const a = lerNumero("a", "a"), b = lerNumero("b", "b"), c = lerNumero("c", "c");
+      el("eq").textContent = a + "x² + (" + b + ")x + (" + c + ") = 0";
+      const resposta = await executarNox("bhaskara(" + a + ", " + b + ", " + c + ")");
+      if (!resposta.ok) { el("areaPassos").hidden = true; mostrarErro(resposta.erro); return; }
+      const r = extrairEtapas(resposta.resultado);
+      if (r.passos.length === 0) { el("areaPassos").hidden = true; mostrarErro("A NOX não devolveu nenhuma etapa."); return; }
+      passos = r.passos; final = r.final; atual = 0;
+      el("areaPassos").hidden = false;
+      desenhar();
+    } catch (e) {
+      el("areaPassos").hidden = true;
+      mostrarErro(e.message);
+    }
+  });
+
+  el("avancar").addEventListener("click", avancar);
+  el("voltar").addEventListener("click", voltar);
+  document.addEventListener("keydown", (ev) => {
+    if (el("areaPassos").hidden) return;
+    if (ev.target.tagName === "INPUT") return;
+    if (ev.key === "ArrowRight") avancar();
+    if (ev.key === "ArrowLeft") voltar();
+  });
+</script>
+</body>
+</html>
